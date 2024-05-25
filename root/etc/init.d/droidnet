@@ -1,0 +1,42 @@
+# This is free software, licensed under the Apache License, Version 2.0
+#
+# Copyright (C) 2024 Hilman Maulana <hilman0.0maulana@gmail.com>
+#!/bin/sh /etc/rc.common
+
+USE_PROCD=1
+START=99
+STOP=10
+NAME=droidnet
+LOG_FILE=/var/log/droidnet.log
+MONITORING_SERVICE=/usr/share/droidnet/monitoring
+
+start_service() {
+	echo "$(date +"%a, %b %d, %I:%M %p") - Activating DroidNet service." >> $LOG_FILE
+	config_load $NAME
+	config_get enable monitoring enable
+	if [ "$enable" = "1" ]; then
+		$MONITORING_SERVICE start
+	fi
+}
+
+stop_service() {
+	echo "$(date +"%a, %b %d, %I:%M %p") - Deactivating DroidNet service." >> $LOG_FILE
+	echo "$(date +"%a, %b %d, %I:%M %p") - Monitoring service: Stopping service." >> $LOG_FILE
+	SERVICE_PID=$(pgrep -f /usr/share/droidnet/monitoring)
+	kill $SERVICE_PID
+}
+
+reload_service() {
+	stop_service
+	start_service
+}
+
+service_triggers() {
+	procd_add_reload_trigger $NAME
+}
+
+restart_service() {
+	stop_service
+	start_service
+}
+
