@@ -98,7 +98,7 @@ jobs:
           echo "CONFIG_LUCI_LANG_zh_Hans=n" >> .config
           echo "CONFIG_PACKAGE_luci-app-droidnet=m" >> .config
           echo "CONFIG_LUCI_JSMIN=n" >> .config
-          echo "CONFIG_LUCI_CSSTIDY" >> .config
+          echo "CONFIG_LUCI_CSSTIDY=n" >> .config
           make defconfig
       - name: Compile IPK
         id: compile
