@@ -5,7 +5,7 @@
 include $(TOPDIR)/rules.mk
 
 LUCI_TITLE:=LuCI for DroidNet
-LUCI_DEPENDS:=+adb +curl
+LUCI_DEPENDS:=+adb +curl +screen
 LUCI_DESCRIPTION:=Manage Android modem and optimize network settings.
 
 PKG_MAINTAINER:=Hilman Maulana <hilman0.0maulana@gmail.com>
