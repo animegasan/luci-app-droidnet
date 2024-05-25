@@ -4,7 +4,8 @@
 		"read": {
 			"file": {
 				"/var/log/droidnet.log": [ "read" ],
-				"/usr/bin/adb": [ "exec" ]
+				"/usr/bin/adb": [ "exec" ],
+				"/usr/bin/pgrep": [ "exec" ]
 			},
 			"uci": [ "droidnet" ]
 		},
