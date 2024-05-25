@@ -65,7 +65,7 @@ return view.extend({
 				E('option', {'value': 'Network' }, _('Network')),
 				E('option', {'value': 'Power' }, _('Power'))
 			]),
-			E('label', {'for': 'log-direction', 'style': 'margin-right: 8px;'}, _('Log Direction') + ' : '),
+			E('label', {'for': 'log-direction', 'style': 'margin-right: 8px;'}, _('Log direction') + ' : '),
 			E('select', {'id': 'log-direction', 'style': 'margin: 8px 8px 8px 0;'}, [
 				E('option', {'value': 'down', 'selected': 'selected'}, _('Down')),
 				E('option', {'value': 'up' }, _('Up'))
