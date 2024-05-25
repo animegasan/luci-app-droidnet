@@ -147,6 +147,7 @@ reconnection() {
 ping_else() {
 	echo $PING_FAILURE >> $LOG_FILE
 	COUNT_FAILURE=$((COUNT_FAILURE + 1))
+COUNT_SUCCESS=0
 	if [ $COUNT_FAILURE -ge $FAILURE_LIMIT ]; then
 		echo $PING_LIMIT >> $LOG_FILE
 		reconnection
