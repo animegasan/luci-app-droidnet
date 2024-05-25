@@ -85,6 +85,8 @@ jobs:
           chmod +x package/downloads/luci-app-droidnet/root/etc/init.d/droidnet package/downloads/luci-app-droidnet/root/usr/share/droidnet/monitoring
           ./scripts/feeds update -a
           echo "CONFIG_PACKAGE_luci-app-droidnet=m" > .config
+          echo "CONFIG_LUCI_JSMIN=n" >> .config
+          echo "CONFIG_LUCI_CSSTIDY=n" >> .config
           ./scripts/feeds install -d n luci-app-droidnet
           make download -j8
       - name: Configure IPK
