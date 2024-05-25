@@ -83,7 +83,6 @@ jobs:
           echo "src-git-full routing https://git.openwrt.org/feed/routing.git;openwrt-23.05"  >> feeds.conf
           git clone -b master https://github.com/${{ github.repository }}.git package/downloads/luci-app-droidnet
           chmod +x package/downloads/luci-app-droidnet/root/etc/init.d/droidnet package/downloads/luci-app-droidnet/root/usr/share/droidnet/monitoring
-          ls -l package/downloads/luci-app-droidnet/htdocs/luci-static/resources/view/droidnet/
           ./scripts/feeds update -a
           echo "CONFIG_PACKAGE_luci-app-droidnet=m" > .config
           ./scripts/feeds install -d n luci-app-droidnet
@@ -98,6 +97,8 @@ jobs:
           echo "CONFIG_AUTOREMOVE=n" >> .config
           echo "CONFIG_LUCI_LANG_zh_Hans=n" >> .config
           echo "CONFIG_PACKAGE_luci-app-droidnet=m" >> .config
+          echo "CONFIG_LUCI_JSMIN=n" >> .config
+          echo "CONFIG_LUCI_CSSTIDY" >> .config
           make defconfig
       - name: Compile IPK
         id: compile
