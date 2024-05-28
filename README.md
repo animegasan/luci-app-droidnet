@@ -19,6 +19,11 @@
 
 DroidNet is an application designed specifically for managing and optimizing network settings on Android modems. With advanced features, DroidNet allows users to have full control over their network connectivity and modem performance, ensuring a better user experience and more stable connections.
 
+## Install via Terminal
+```
+curl -s https://raw.githubusercontent.com/animegasan/luci-app-droidnet/master/install.sh | bash
+```
+
 ## Supported Devices
 - Android version 10 or greater
 - Rooted Android for version 10 and lower
