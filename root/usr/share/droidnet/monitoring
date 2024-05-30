@@ -9,102 +9,136 @@ COUNT_FAILURE=0
 COUNT_SUCCESS=0
 DEVICES_FOUND=0
 COMMAND_FOUND=0
+DEVICES_ROOT=0
 FAILURE_LIMIT=$(uci get droidnet.monitoring.failure_limit)
 SUCCESS_LIMIT=$(uci get droidnet.monitoring.success_limit)
 DEVICES_ID=$(uci get droidnet.device.id)
-DEVICES_LIST=$(adb devices -l | awk 'NR>1 && /device/ {print $1}')
 WAIT_TIME=$(uci get droidnet.monitoring.wait_time)
 HOST=$(uci get droidnet.monitoring.host)
 PORT=$(uci get droidnet.monitoring.ping)
 INTERFACE_NAME=$(uci get droidnet.monitoring.interface)
 RESTART_TUNNEL=$(uci get droidnet.monitoring.restart)
 TOOL_TUNNELING=$(uci get droidnet.monitoring.tunnel_service)
-LOG_FILE=/var/log/droidnet.log
-PING_SUCCESS="$(date +"%a, %b %d, %I:%M %p") - Monitoring service: Ping to '$HOST' using '$PORT' succeeded."
-PING_FAILURE="$(date +"%a, %b %d, %I:%M %p") - Monitoring service: Ping to '$HOST' using '$PORT' failed."
-PING_LIMIT="$(date +"%a, %b %d, %I:%M %p") - Monitoring service: Failed ping to '$HOST' using '$PORT' $FAILURE_LIMIT times."
-PING_BACKGROUND="$(date +"%a, %b %d, %I:%M %p") - Monitoring service: Ping to '$HOST' using '$PORT' successfuly, starting continuous ping in the background."
+PING_SUCCESS="Ping to '$HOST' using '$PORT' succeeded."
+PING_BACKGROUND="Ping to '$HOST' using '$PORT' successfuly, starting continuous ping in the background."
 
 # Functions
+log() {
+	echo "$(date +"%a, %b %d, %I:%M %p") - Monitoring service: $1" >> /var/log/droidnet.log
+}
+
 check_devices() {
-	echo "$(date +"%a, %b %d, %I:%M %p") - Monitoring service: Checking devices." >> $LOG_FILE
-	for DEVICE in $DEVICES_LIST; do
+	log "Checking devices."
+	for DEVICE in $(adb devices -l | awk 'NR>1 && /device/ {print $1}'); do
 		if [ $DEVICE = $DEVICES_ID ]; then
 			DEVICES_FOUND=1
+			log "Device found in the list of connected devices."
 			break
 		fi
 	done
 	if [ $DEVICES_FOUND -eq 1 ]; then
-		if adb -s $DEVICES_ID shell cmd connectivity 2>&1 | grep -q "No shell command implementation"; then
-			echo "$(date +"%a, %b %d, %I:%M %p") - Monitoring service: Device ID '$DEVICES_ID' found, but failed to turn on airplane mode because the device Android version is below 10." >> $LOG_FILE
+		log "Checking root status on device."
+		if adb -s $DEVICES_ID shell su -v 2>&1 | grep -q "/system/bin/sh: su: not found"; then
+			INFO_ROOT="Non-root"
+			log "Device not rooted."
+		else
+			INFO_ROOT="Rooted"
+			DEVICES_ROOT=1
+			log "Device is rooted."
+		fi
+		log "Checking availability of airplane mode command on device."
+		INFO_ANDROID=$(adb -s $DEVICES_ID shell getprop ro.build.version.release)
+		INFO_VERSION=${INFO_ANDROID%%.*}
+		if [ $INFO_VERSION -lt 10 ]; then
+			if [ $DEVICES_ROOT -eq 1 ]; then
+				COMMAND_FOUND=1
+				log "Airplane mode can be turned on."
+			else
+				log "Airplane mode can't be turned on."
+			fi
 		else
 			COMMAND_FOUND=1
-			echo "$(date +"%a, %b %d, %I:%M %p") - Monitoring service: Device ID '$DEVICES_ID' found and airplane mode can be turned on." >> $LOG_FILE
+			log "Airplane mode can be turned on."
 		fi
+		log "Device information"
+		GET_INFO=$(adb devices -l | grep $DEVICES_ID)
+		INFO_USB=$(echo $GET_INFO | awk '{for(i=1;i<=NF;i++) if($i ~ /^usb:/) print $i}')
+		INFO_MODEL=$(echo $GET_INFO | awk '{for(i=1;i<=NF;i++) if($i ~ /^model:/) {split($i, a, ":"); print a[2]}}')
+		log "ID: $DEVICES_ID, Model: $INFO_MODEL, Android: $INFO_ANDROID, Status: $INFO_ROOT, Connection: $INFO_USB"
 	else
-		echo "$(date +"%a, %b %d, %I:%M %p") - Monitoring service: Device ID '$DEVICES_ID' not found in the list of connected devices." >> $LOG_FILE
+		log "Device not found in the list of connected devices."
 	fi
 }
 
 enable_airplane_mode() {
-	echo "$(date +"%a, %b %d, %I:%M %p") - Monitoring service: Turning on Airplane mode." >> $LOG_FILE
-	adb -s $DEVICES_ID shell cmd connectivity airplane-mode enable
+	log "Turning on Airplane mode."
+	if [ $DEVICES_ROOT -eq 1 ] && [ $INFO_VERSION -lt 10 ]; then
+		adb -s $DEVICES_ID shell su -c 'settings put global airplane_mode_on 1'
+		adb -s $DEVICES_ID shell su -c 'am broadcast -a android.intent.action.AIRPLANE_MODE --ez state true'
+	else
+		adb -s $DEVICES_ID shell cmd connectivity airplane-mode enable
+	fi
 }
 
 disable_airplane_mode() {
-	echo "$(date +"%a, %b %d, %I:%M %p") - Monitoring service: Turning off Airplane mode." >> $LOG_FILE
-	adb -s $DEVICES_ID shell cmd connectivity airplane-mode disable
+	log "Turning off Airplane mode."
+	if [ $DEVICES_ROOT -eq 1 ] && [ $INFO_VERSION -lt 10 ]; then
+		adb -s $DEVICES_ID shell su -c 'settings put global airplane_mode_on 0'
+		adb -s $DEVICES_ID shell su -c 'am broadcast -a android.intent.action.AIRPLANE_MODE --ez state false'
+	else
+		adb -s $DEVICES_ID shell cmd connectivity airplane-mode disable
+	fi
 }
 
 restart_interface() {
-	echo "$(date +"%a, %b %d, %I:%M %p") - Monitoring service: Restarting interface '${INTERFACE_NAME}'." >> $LOG_FILE
+	log "Restarting interface $INTERFACE_NAME."
 	ifup $INTERFACE_NAME
 }
 
 disable_neko() {
-	echo "$(date +"%a, %b %d, %I:%M %p") - Monitoring service: Disabling Neko." >> $LOG_FILE
+	log "Disabling Neko."
 	/etc/init.d/neko stop
 }
 
 enable_neko() {
-	echo "$(date +"%a, %b %d, %I:%M %p") - Monitoring service: Enabling Neko." >> $LOG_FILE
+	log "Enabling Neko."
 	/etc/init.d/neko start
 }
 
 disable_openclash() {
-	echo "$(date +"%a, %b %d, %I:%M %p") - Monitoring service: Disabling OpenClash." >> $LOG_FILE
+	log "Disabling OpenClash."
 	/etc/init.d/openclash stop
 }
 
 enable_openclash() {
-	echo "$(date +"%a, %b %d, %I:%M %p") - Monitoring service: Enabling OpenClash." >> $LOG_FILE
+	log "Enabling OpenClash."
 	/etc/init.d/openclash start
 }
 
 disable_passwall() {
-	echo "$(date +"%a, %b %d, %I:%M %p") - Monitoring service: Disabling PassWall." >> $LOG_FILE
+	log "Disabling PassWall."
 	/etc/init.d/passwall stop
 }
 
 enable_passwall() {
-	echo "$(date +"%a, %b %d, %I:%M %p") - Monitoring service: Enabling PassWall." >> $LOG_FILE
+	log "Enabling PassWall."
 	/etc/init.d/passwall start
 }
 
 disable_v2ray() {
-	echo "$(date +"%a, %b %d, %I:%M %p") - Monitoring service: Disabling V2Ray." >> $LOG_FILE
+	log "Disabling V2Ray."
 	start-stop-daemon -K -p /var/run/v2raya.pid
 }
 
 enable_v2ray() {
-	echo "$(date +"%a, %b %d, %I:%M %p") - Monitoring service: Enabling V2Ray." >> $LOG_FILE
+	log "Enabling V2Ray."
 	start-stop-daemon -b -S -m -p /var/run/v2raya.pid -x /usr/bin/enable_v2rayA
 }
 
 reconnection() {
-	echo "$(date +"%a, %b %d, %I:%M %p") - Monitoring service: Starting connection update service on the device." >> $LOG_FILE
+	log "Starting connection update service on the device."
 	if [ $RESTART_TUNNEL = 1 ]; then
-		echo "$(date +"%a, %b %d, %I:%M %p") - Monitoring service: Disabling tunneling tool." >> $LOG_FILE
+		log "Disabling tunneling tool."
 		if [ $TOOL_TUNNELING = "neko" ]; then
 			disable_neko
 		elif [ $TOOL_TUNNELING = "openclash" ]; then
@@ -114,10 +148,10 @@ reconnection() {
 		elif [ $TOOL_TUNNELING = "v2ray" ]; then
 			disable_v2ray
 		else
-			echo "$(date +"%a, %b %d, %I:%M %p") - Monitoring service: Tunneling tool '$TOOL_TUNNELING' not found, please install it first." >> $LOG_FILE
+			log "Tunneling tool '$TOOL_TUNNELING' not found, please install it first."
 		fi
 	elif [ $RESTART_TUNNEL = 0 ]; then
-		echo "$(date +"%a, %b %d, %I:%M %p") - Monitoring service: Skipping disabling tunneling tool." >> $LOG_FILE
+		log "Skipping disabling tunneling tool."
 	fi
 	enable_airplane_mode
 	sleep $WAIT_TIME
@@ -125,7 +159,7 @@ reconnection() {
 	sleep $WAIT_TIME
 	restart_interface
 	if [ $RESTART_TUNNEL = 1 ]; then
-		echo "$(date +"%a, %b %d, %I:%M %p") - Monitoring service: Enabling tunneling tool." >> $LOG_FILE
+		log "Enabling tunneling tool."
 		if [ $TOOL_TUNNELING = "neko" ]; then
 			enable_neko
 		elif [ $TOOL_TUNNELING = "openclash" ]; then
@@ -135,21 +169,21 @@ reconnection() {
 		elif [ $TOOL_TUNNELING = "v2ray" ]; then
 			enable_v2ray
 		else
-			echo "$(date +"%a, %b %d, %I:%M %p") - Monitoring service: Tunneling tool '$TOOL_TUNNELING' not found, please install it first." >> $LOG_FILE
+			log "Tunneling tool '$TOOL_TUNNELING' not found, please install it first."
 		fi
 	elif [ $RESTART_TUNNEL = 0 ]; then
-		echo "$(date +"%a, %b %d, %I:%M %p") - Monitoring service: Skipping enabling tunneling tool." >> $LOG_FILE
+		log "Skipping enabling tunneling tool."
 	fi
-	echo "$(date +"%a, %b %d, %I:%M %p") - Monitoring service: Connection update service on the device has completed." >> $LOG_FILE
+	log "Connection update service on the device has completed."
 	COUNT_FAILURE=0
 }
 
 ping_else() {
-	echo $PING_FAILURE >> $LOG_FILE
+	log "Ping to '$HOST' using '$PORT' failed."
 	COUNT_FAILURE=$((COUNT_FAILURE + 1))
 	COUNT_SUCCESS=0
 	if [ $COUNT_FAILURE -ge $FAILURE_LIMIT ]; then
-		echo $PING_LIMIT >> $LOG_FILE
+		log "Failed ping to '$HOST' using '$PORT' $FAILURE_LIMIT times."
 		reconnection
 	fi
 }
@@ -158,11 +192,11 @@ ping_http() {
 	if curl -Is "http://$HOST:80" > /dev/null; then
 		COUNT_SUCCESS=$((COUNT_SUCCESS + 1))
 		if [ $SUCCESS_LIMIT = "unlimited" ] || [ $COUNT_SUCCESS -le $SUCCESS_LIMIT ]; then
-			echo $PING_SUCCESS >> $LOG_FILE
+			log $PING_SUCCESS
 		fi
 		COUNT_FAILURE=0
 		if [ $COUNT_SUCCESS -eq $SUCCESS_LIMIT ]; then
-			echo $PING_BACKGROUND >> $LOG_FILE
+			log $PING_BACKGROUND
 		fi
 	else
 		ping_else
@@ -173,11 +207,11 @@ ping_https() {
 	if curl -Is "https://$HOST:443" > /dev/null; then
 		COUNT_SUCCESS=$((COUNT_SUCCESS + 1))
 		if [ $SUCCESS_LIMIT = "unlimited" ] || [ $COUNT_SUCCESS -le $SUCCESS_LIMIT ]; then
-			echo $PING_SUCCESS >> $LOG_FILE
+			log $PING_SUCCESS
 		fi
 		COUNT_FAILURE=0
 		if [ $COUNT_SUCCESS -eq $SUCCESS_LIMIT ]; then
-			echo $PING_BACKGROUND >> $LOG_FILE
+			log $PING_BACKGROUND
 		fi
 	else
 		ping_else
@@ -189,11 +223,11 @@ ping_icmp() {
 	if [ $? -eq 0 ]; then
 		COUNT_SUCCESS=$((COUNT_SUCCESS + 1))
 		if [ $SUCCESS_LIMIT = "unlimited" ] || [ $COUNT_SUCCESS -le $SUCCESS_LIMIT ]; then
-			echo $PING_SUCCESS >> $LOG_FILE
+			log $PING_SUCCESS
 		fi
 		COUNT_FAILURE=0
 		if [ $COUNT_SUCCESS -eq $SUCCESS_LIMIT ]; then
-			echo $PING_BACKGROUND >> $LOG_FILE
+			log $PING_BACKGROUND
 		fi
 	else
 		ping_else
@@ -204,11 +238,11 @@ ping_tcp() {
 	if nc -zvw 1 $HOST 80 2>&1 | grep -q succeeded; then
 		COUNT_SUCCESS=$((COUNT_SUCCESS + 1))
 		if [ $SUCCESS_LIMIT = "unlimited" ] || [ $COUNT_SUCCESS -le $SUCCESS_LIMIT ]; then
-			echo $PING_SUCCESS >> $LOG_FILE
+			log $PING_SUCCESS
 		fi
 		COUNT_FAILURE=0
 		if [ $COUNT_SUCCESS -eq $SUCCESS_LIMIT ]; then
-			echo $PING_BACKGROUND >> $LOG_FILE
+			log $PING_BACKGROUND
 		fi
 	else
 		ping_else
@@ -216,10 +250,10 @@ ping_tcp() {
 }
 
 start_service() {
-	echo "$(date +"%a, %b %d, %I:%M %p") - Monitoring service: Starting service." >> $LOG_FILE
+	log "Starting service."
 	check_devices
 	if [ $DEVICES_FOUND -eq 1 ] && [ $COMMAND_FOUND -eq 1 ]; then
-		echo "$(date +"%a, %b %d, %I:%M %p") - Monitoring service: Starting ping to '$HOST' using '$PORT'." >> $LOG_FILE
+		log "Starting ping to '$HOST' using '$PORT'."
 		while true; do
 			if [ $PORT = "http" ]; then
 				ping_http
@@ -233,19 +267,19 @@ start_service() {
 			sleep 5
 		done
 	else
-		echo "$(date +"%a, %b %d, %I:%M %p") - Monitoring service: Failed to start service." >> $LOG_FILE
+		log "Failed to start service."
 		exit 1
 	fi
 }
 
 stop_service() {
-	echo "$(date +"%a, %b %d, %I:%M %p") - Monitoring service: Stopping service." >> $LOG_FILE
+	log "Stopping service."
 	SERVICE_PID=$(pgrep -f /usr/share/droidnet/monitoring)
 	kill $SERVICE_PID
 }
 
 restart_service() {
-	echo "$(date +"%a, %b %d, %I:%M %p") - Monitoring service: Restarting service." >> $LOG_FILE
+	log "Restarting service."
 	SERVICE_PID=$(pgrep -f /usr/share/droidnet/monitoring | head -n 1)
 	start_service
 }
@@ -264,4 +298,3 @@ else
 	echo "	stop		Stop the service"
 	echo "	restart 	Restart the service"
 fi
-
