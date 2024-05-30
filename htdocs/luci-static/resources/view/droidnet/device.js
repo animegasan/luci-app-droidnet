@@ -137,6 +137,22 @@ return view.extend({
 					return batteryInfo;
 				}).catch(function(error) {
 					throw new Error(error);
+				}),
+				fs.exec('adb', ['-s', device, 'shell', 'su', '-v']).then(function(result) {
+					var rootInfo = {};
+					var stdout = result.stdout;
+					var stderr = result.stderr;
+					if (stderr) {
+						rootInfo['device_root'] = false;
+					} else if (stdout === '/system/bin/sh: su: not found\n') {
+						rootInfo['device_root'] = false;
+					} else {
+						var parts = stdout.trim().split(':');
+						rootInfo['device_root'] = {'version': parts[0], 'name': parts[1]};
+					};
+					return rootInfo;
+				}).catch(function(error) {
+					throw new Error(error);
 				})
 			]).then(function(results) {
 				var deviceInfo = results[0];
@@ -144,8 +160,9 @@ return view.extend({
 				var kernelInfo = results[2];
 				var memmoryInfo = results[3];
 				var batteryInfo = results[4];
-				if (device && deviceInfo && uptimeInfo && kernelInfo && memmoryInfo && batteryInfo) {
-					return Object.assign({}, {device: device}, deviceInfo, uptimeInfo, kernelInfo, memmoryInfo, batteryInfo)
+				var rootInfo = results[4];
+				if (device && deviceInfo && uptimeInfo && kernelInfo && memmoryInfo && batteryInfo && rootInfo) {
+					return Object.assign({}, {device: device}, deviceInfo, uptimeInfo, kernelInfo, memmoryInfo, batteryInfo, rootInfo)
 				} else {
 					throw new Error(_('Failed to get complete device information.'));
 				};
@@ -184,7 +201,11 @@ return view.extend({
 					]),
 					E('tr', {'class': 'tr cbi-rowstyle-2'}, [
 						E('td', {'class': 'td left', 'width': '25%'}, _('Root status')),
-						E('td', {'class': 'td left', 'width': '25%'}, '-'),
+						E('td', {'class': 'td left', 'width': '25%'}, 
+							data.device_root === false ? _('Non-root') :
+							data.device_root ? (_('Root with %s (%s)').format(data.device_root.name, data.device_root.version)) :
+							'-'
+						),
 						E('td', {'class': 'td left', 'width': '25%'}, _('RAM')),
 						E('td', {'class': 'td left', 'width': '25%'}, data.device_memory || '-')
 					]),
