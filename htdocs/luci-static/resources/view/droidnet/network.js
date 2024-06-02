@@ -188,8 +188,8 @@ return view.extend({
 											return item.trim();
 										});
 									}else {
-                                        value = [value.trim(), ''];
-                                    };
+										value = [value.trim(), ''];
+									};
 									networkInfo[properties[property]] = value;
 									break;
 								};
