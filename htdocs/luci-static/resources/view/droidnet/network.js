@@ -187,7 +187,9 @@ return view.extend({
 										value = value.split(',').map(function(item) {
 											return item.trim();
 										});
-									};
+									}else {
+                                        value = [value.trim(), ''];
+                                    };
 									networkInfo[properties[property]] = value;
 									break;
 								};
