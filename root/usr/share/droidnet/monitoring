@@ -24,7 +24,7 @@ PING_BACKGROUND="Ping to '$HOST' using '$PORT' successfuly, starting continuous 
 
 # Functions
 log() {
-	echo "$(date +"%a, %b %d, %I:%M %p") - Monitoring service: $1" >> /var/log/droidnet.log
+	echo "$(date +"%a, %b %d, %I:%M:%S %p") - Monitoring service: $1" >> /var/log/droidnet.log
 }
 
 check_devices() {
