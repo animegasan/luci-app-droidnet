@@ -1,6 +1,6 @@
 /* This is free software, licensed under the Apache License, Version 2.0
  *
- * Copyright (C) 2024 Hilman Maulana <hilman0.0maulana@gmail.com>
+ * Copyright (C) 2024 Hilman Maulana <hilman0.0maulana@gmail.com>, Anas Fanani <anas@anasfanani.com>
  */
 
 'use strict';
