@@ -18,6 +18,7 @@ HOST=$(uci get droidnet.monitoring.host)
 PORT=$(uci get droidnet.monitoring.ping)
 INTERFACE_NAME=$(uci get droidnet.monitoring.interface)
 RESTART_TUNNEL=$(uci get droidnet.monitoring.restart)
+RESTART_INTERFACES=$(uci get droidnet.monitoring.restart_interface)
 TOOL_TUNNELING=$(uci get droidnet.monitoring.tunnel_service)
 PING_SUCCESS="Ping to '$HOST' using '$PORT' succeeded."
 PING_BACKGROUND="Ping to '$HOST' using '$PORT' successfuly, starting continuous ping in the background."
@@ -91,8 +92,12 @@ disable_airplane_mode() {
 }
 
 restart_interface() {
-	log "Restarting interface $INTERFACE_NAME."
-	ifup $INTERFACE_NAME
+	if [ $RESTART_INTERFACES = 1 ]; then
+		log "Restarting interface $INTERFACE_NAME."
+		ifup $INTERFACE_NAME
+	else
+		log "Network interface $INTERFACE_NAME will not be restarted."
+	fi
 }
 
 disable_neko() {
