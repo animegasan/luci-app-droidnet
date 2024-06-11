@@ -156,7 +156,9 @@ return view.extend({
 		o.value('4', _('4 seconds'));
 		o.value('5', _('5 seconds'));
 		o.rmempty = false;
-		o = s.option(widgets.NetworkSelect, 'interface', _('Interface'),
+		o = s.option(form.Flag, 'restart_interface', _('Restart the interface'),
+			_('Enable to automatically restart interface.'));
+		o = s.option(widgets.NetworkSelect, 'interface_name', _('Interface'),
 			_('Name of interface to be restarted.'));
 		o.nocreate = true;
 		o.rmempty = false;
