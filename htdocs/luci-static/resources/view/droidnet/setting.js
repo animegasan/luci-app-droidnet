@@ -162,7 +162,7 @@ return view.extend({
 			_('Name of interface to be restarted.'));
 		o.nocreate = true;
 		o.rmempty = false;
-		o = s.option(form.Flag, 'restart', _('Restart the tunnel'),
+		o = s.option(form.Flag, 'restart_tunnel', _('Restart the tunnel'),
 			_('Enable to automatically restart tunneling tool.'));
 		o.rmempty = false;
 		if (data.tunnelService === false) {
