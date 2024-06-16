@@ -12,7 +12,7 @@ LOG_FILE=/var/log/droidnet.log
 MONITORING_SERVICE=/usr/share/droidnet/monitoring
 
 start_service() {
-	echo "$(date +"%a, %b %d, %I:%M %p") - Activating DroidNet service." >> $LOG_FILE
+	echo "$(date +"%a, %b %d, %I:%M:%S %p") - Activating DroidNet service." >> $LOG_FILE
 	config_load $NAME
 	config_get enable monitoring enable
 	if [ $enable = 1 ]; then
@@ -20,14 +20,9 @@ start_service() {
 	fi
 }
 
-# stop_service() {
-# 	echo "$(date +"%a, %b %d, %I:%M %p") - Deactivating DroidNet service." >> $LOG_FILE
-# 	echo "$(date +"%a, %b %d, %I:%M %p") - Monitoring service: Stopping service." >> $LOG_FILE
-# 	$MONITORING_SERVICE stop
-# }
 stop_service() {
-	echo "$(date +"%a, %b %d, %I:%M %p") - Deactivating DroidNet service." >> $LOG_FILE
-	echo "$(date +"%a, %b %d, %I:%M %p") - Monitoring service: Stopping service." >> $LOG_FILE
+	echo "$(date +"%a, %b %d, %I:%M:%S %p") - Deactivating DroidNet service." >> $LOG_FILE
+	echo "$(date +"%a, %b %d, %I:%M:%S %p") - Monitoring service: Stopping service." >> $LOG_FILE
 	session=$(screen -ls | awk '/droidnet/ {print $1}')
 	screen -X -S $session quit
 	screen -wipe
