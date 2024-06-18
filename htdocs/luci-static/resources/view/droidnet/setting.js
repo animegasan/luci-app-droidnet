@@ -127,6 +127,11 @@ return view.extend({
 		o.value('icmp', _('ICMP'));
 		o.value('tcp', _('TCP'));
 		o.rmempty = false;
+		o = s.option(form.ListValue, 'device', _('Device'),
+			_('Set device for pinging host address.'));
+		o.value('android', _('Android Modem'));
+		o.value('openwrt', _('OpenWRT'));
+		o.rmempty = false;
 		o = s.option(form.Value, 'host', _('Host'),
 			_('Host address you want to ping. Recommended to use bug on Tun.'));
 		o.placeholder = _('Host address');
