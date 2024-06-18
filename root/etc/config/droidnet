@@ -5,7 +5,7 @@ config droidnet 'device'
 
 config droidnet 'monitoring'
 	option enable '0'
-	option ping 'http'
+	option ping 'icmp'
 	option device 'android'
 	option host 'google.com'
 	option success_limit '5'
