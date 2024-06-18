@@ -124,8 +124,7 @@ return view.extend({
 			_('Set method for pinging host address.'));
 		o.value('http', _('HTTP'));
 		o.value('https', _('HTTPS'));
-		o.value('icmp', _('ICMP'));
-		o.value('tcp', _('TCP'));
+		o.value('icmp', _('ICMP (Support Android modem)'));
 		o.rmempty = false;
 		o = s.option(form.ListValue, 'device', _('Device'),
 			_('Set device for pinging host address.'));
