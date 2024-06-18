@@ -84,7 +84,8 @@ return view.extend({
 							});
 							var time = new Date().toLocaleTimeString(undefined, {
 								hour: '2-digit',
-								minute: '2-digit'
+								minute: '2-digit',
+								second: '2-digit'
 							});
 							var notif = `${date}, ${time} - ${message}\n`;
 							fs.write('/var/log/droidnet.log', notif);
