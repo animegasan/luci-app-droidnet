@@ -160,7 +160,7 @@ return view.extend({
 				var kernelInfo = results[2];
 				var memmoryInfo = results[3];
 				var batteryInfo = results[4];
-				var rootInfo = results[4];
+				var rootInfo = results[5];
 				if (device && deviceInfo && uptimeInfo && kernelInfo && memmoryInfo && batteryInfo && rootInfo) {
 					return Object.assign({}, {device: device}, deviceInfo, uptimeInfo, kernelInfo, memmoryInfo, batteryInfo, rootInfo)
 				} else {
