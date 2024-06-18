@@ -144,7 +144,7 @@ return view.extend({
 					var stderr = result.stderr;
 					if (stderr) {
 						rootInfo['device_root'] = false;
-					} else if (stdout === '/system/bin/sh: su: not found\n') {
+					} else if (stdout === '/system/bin/sh: su: not found\n' || stdout === '/system/bin/sh: su: inaccessible or not found\n') {
 						rootInfo['device_root'] = false;
 					} else {
 						var parts = stdout.trim().split(':');
