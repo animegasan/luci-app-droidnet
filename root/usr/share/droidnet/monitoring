@@ -10,18 +10,22 @@ COUNT_SUCCESS=0
 DEVICES_FOUND=0
 COMMAND_FOUND=0
 DEVICES_ROOT=0
+DEVICES_ANDROID=0
+DEVICES_OPENWRT=0
 FAILURE_LIMIT=$(uci get droidnet.monitoring.failure_limit)
 SUCCESS_LIMIT=$(uci get droidnet.monitoring.success_limit)
 DEVICES_ID=$(uci get droidnet.device.id)
 WAIT_TIME=$(uci get droidnet.monitoring.wait_time)
 HOST=$(uci get droidnet.monitoring.host)
 PORT=$(uci get droidnet.monitoring.ping)
-INTERFACE_NAME=$(uci get droidnet.monitoring.interface)
-RESTART_TUNNEL=$(uci get droidnet.monitoring.restart_tunnel)
+INTERFACE_NAME=$(uci get droidnet.monitoring.interface_name)
 RESTART_INTERFACES=$(uci get droidnet.monitoring.restart_interface)
 TOOL_TUNNELING=$(uci get droidnet.monitoring.tunnel_service)
-PING_SUCCESS="Ping to '$HOST' using '$PORT' succeeded."
-PING_BACKGROUND="Ping to '$HOST' using '$PORT' successfuly, starting continuous ping in the background."
+RESTART_TUNNEL=$(uci get droidnet.monitoring.restart_tunnel)
+PING_DEVICE=$(uci get droidnet.monitoring.device)
+PING_SUCCESS="Ping to '$HOST' from $PING_DEVICE using $PORT succeeded."
+PING_BACKGROUND="Ping to '$HOST' from $PING_DEVICE using $PORT successfuly, starting continuous ping in the background."
+PING_UNSUPPORTED="Ping to '$HOST' from $PING_DEVICE using $PORT is not supported, please change ping method or device."
 
 # Functions
 log() {
@@ -39,7 +43,7 @@ check_devices() {
 	done
 	if [ $DEVICES_FOUND -eq 1 ]; then
 		log "Checking root status on device."
-		if adb -s $DEVICES_ID shell su -v 2>&1 | grep -q "/system/bin/sh: su: not found"; then
+		if adb -s $DEVICES_ID shell su -v 2>&1 | grep -q -e "/system/bin/sh: su: not found" -e "/system/bin/sh: su: inaccessible or not found"; then
 			INFO_ROOT="Non-root"
 			log "Device not rooted."
 		else
@@ -68,6 +72,7 @@ check_devices() {
 		log "ID: $DEVICES_ID, Model: $INFO_MODEL, Android: $INFO_ANDROID, Status: $INFO_ROOT, Connection: $INFO_USB"
 	else
 		log "Device not found in the list of connected devices."
+		break
 	fi
 }
 
@@ -96,7 +101,7 @@ restart_interface() {
 		log "Restarting interface $INTERFACE_NAME."
 		ifup $INTERFACE_NAME
 	else
-		log "Network interface $INTERFACE_NAME will not be restarted."
+		log "Skipping restarting interface $INTERFACE_NAME."
 	fi
 }
 
@@ -174,80 +179,81 @@ reconnection() {
 		elif [ $TOOL_TUNNELING = "v2ray" ]; then
 			enable_v2ray
 		else
-			log "Tunneling tool '$TOOL_TUNNELING' not found, please install it first."
+			log "Tunneling tool $TOOL_TUNNELING not found, please install it first."
 		fi
 	elif [ $RESTART_TUNNEL = 0 ]; then
 		log "Skipping enabling tunneling tool."
 	fi
 	log "Connection update service on the device has completed."
 	COUNT_FAILURE=0
+	DEVICES_FOUND=0
+	check_devices
 }
 
 ping_else() {
-	log "Ping to '$HOST' using '$PORT' failed."
+	log "Ping to '$HOST' from $PING_DEVICE using $PORT failed."
 	COUNT_FAILURE=$((COUNT_FAILURE + 1))
 	COUNT_SUCCESS=0
 	if [ $COUNT_FAILURE -ge $FAILURE_LIMIT ]; then
-		log "Failed ping to '$HOST' using '$PORT' $FAILURE_LIMIT times."
+		log "Failed ping to '$HOST' from $PING_DEVICE using $PORT $FAILURE_LIMIT times."
 		reconnection
 	fi
 }
 
 ping_http() {
-	if curl -Is "http://$HOST:80" > /dev/null; then
-		COUNT_SUCCESS=$((COUNT_SUCCESS + 1))
-		if [ $SUCCESS_LIMIT = "unlimited" ] || [ $COUNT_SUCCESS -le $SUCCESS_LIMIT ]; then
-			log $PING_SUCCESS
-		fi
-		COUNT_FAILURE=0
-		if [ $COUNT_SUCCESS -eq $SUCCESS_LIMIT ]; then
-			log $PING_BACKGROUND
-		fi
+	if [ $PING_DEVICE = "android" ]; then
+		log "$PING_UNSUPPORTED"
+		break
 	else
-		ping_else
+		if curl -Is "http://$HOST:80" > /dev/null; then
+			COUNT_SUCCESS=$((COUNT_SUCCESS + 1))
+			if [ $SUCCESS_LIMIT = "unlimited" ] || [ $COUNT_SUCCESS -le $SUCCESS_LIMIT ]; then
+				log "$PING_SUCCESS"
+			fi
+			COUNT_FAILURE=0
+			if [ $COUNT_SUCCESS -eq $SUCCESS_LIMIT ]; then
+				log "$PING_BACKGROUND"
+			fi
+		else
+			ping_else
+		fi
 	fi
 }
 
 ping_https() {
-	if curl -Is "https://$HOST:443" > /dev/null; then
-		COUNT_SUCCESS=$((COUNT_SUCCESS + 1))
-		if [ $SUCCESS_LIMIT = "unlimited" ] || [ $COUNT_SUCCESS -le $SUCCESS_LIMIT ]; then
-			log $PING_SUCCESS
-		fi
-		COUNT_FAILURE=0
-		if [ $COUNT_SUCCESS -eq $SUCCESS_LIMIT ]; then
-			log $PING_BACKGROUND
-		fi
+	if [ $PING_DEVICE = "android" ]; then
+		log "$PING_UNSUPPORTED"
+		break
 	else
-		ping_else
+		if curl -Is "https://$HOST:443" > /dev/null; then
+			COUNT_SUCCESS=$((COUNT_SUCCESS + 1))
+			if [ $SUCCESS_LIMIT = "unlimited" ] || [ $COUNT_SUCCESS -le $SUCCESS_LIMIT ]; then
+				log "$PING_SUCCESS"
+			fi
+			COUNT_FAILURE=0
+			if [ $COUNT_SUCCESS -eq $SUCCESS_LIMIT ]; then
+				log "$PING_BACKGROUND"
+			fi
+		else
+			ping_else
+		fi
 	fi
 }
 
 ping_icmp() {
-	ping -q -c 3 -W 3 -p 0 $HOST > /dev/null
+	if [ $PING_DEVICE = "android" ]; then
+		adb -s $DEVICES_ID shell ping -q -c 3 -W 3 -p 0 $HOST > /dev/null
+	else
+		ping -q -c 3 -W 3 -p 0 $HOST > /dev/null
+	fi
 	if [ $? -eq 0 ]; then
 		COUNT_SUCCESS=$((COUNT_SUCCESS + 1))
 		if [ $SUCCESS_LIMIT = "unlimited" ] || [ $COUNT_SUCCESS -le $SUCCESS_LIMIT ]; then
-			log $PING_SUCCESS
+			log "$PING_SUCCESS"
 		fi
 		COUNT_FAILURE=0
 		if [ $COUNT_SUCCESS -eq $SUCCESS_LIMIT ]; then
-			log $PING_BACKGROUND
-		fi
-	else
-		ping_else
-	fi
-}
-
-ping_tcp() {
-	if nc -zvw 1 $HOST 80 2>&1 | grep -q succeeded; then
-		COUNT_SUCCESS=$((COUNT_SUCCESS + 1))
-		if [ $SUCCESS_LIMIT = "unlimited" ] || [ $COUNT_SUCCESS -le $SUCCESS_LIMIT ]; then
-			log $PING_SUCCESS
-		fi
-		COUNT_FAILURE=0
-		if [ $COUNT_SUCCESS -eq $SUCCESS_LIMIT ]; then
-			log $PING_BACKGROUND
+			log "$PING_BACKGROUND"
 		fi
 	else
 		ping_else
@@ -258,7 +264,7 @@ start_service() {
 	log "Starting service."
 	check_devices
 	if [ $DEVICES_FOUND -eq 1 ] && [ $COMMAND_FOUND -eq 1 ]; then
-		log "Starting ping to '$HOST' using '$PORT'."
+		log "Starting ping to '$HOST' from $PING_DEVICE using $PORT."
 		while true; do
 			if [ $PORT = "http" ]; then
 				ping_http
@@ -266,8 +272,6 @@ start_service() {
 				ping_https
 			elif [ $PORT = "icmp" ]; then
 				ping_icmp
-			elif [ $PORT = "tcp" ]; then
-				ping_tcp
 			fi
 			sleep 5
 		done
@@ -283,23 +287,14 @@ stop_service() {
 	kill $SERVICE_PID
 }
 
-restart_service() {
-	log "Restarting service."
-	SERVICE_PID=$(pgrep -f /usr/share/droidnet/monitoring | head -n 1)
-	start_service
-}
-
 # Main script
 if [ "$1" = "start" ]; then
 	start_service
 elif [ "$1" = "stop" ]; then
 	stop_service
-elif [ "$1" = "restart" ]; then
-	restart_service
 else
 	echo "Syntax: Monitoring service [DroidNet]"
 	echo "Available commands:"
 	echo "	start		Start the service"
 	echo "	stop		Stop the service"
-	echo "	restart 	Restart the service"
 fi
