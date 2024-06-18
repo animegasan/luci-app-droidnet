@@ -163,6 +163,7 @@ return view.extend({
 		o.rmempty = false;
 		o = s.option(form.Flag, 'restart_interface', _('Restart the interface'),
 			_('Enable to automatically restart interface.'));
+		o.rmempty = false;
 		o = s.option(widgets.NetworkSelect, 'interface_name', _('Interface'),
 			_('Name of interface to be restarted.'));
 		o.nocreate = true;
