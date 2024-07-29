@@ -21,7 +21,7 @@ DroidNet is an application designed specifically for managing and optimizing net
 
 ## Install via Terminal
 ```
-curl -s https://raw.githubusercontent.com/animegasan/luci-app-droidnet/master/install.sh | bash
+curl -s https://raw.githubusercontent.com/animegasan/luci-app-droidnet/master/install.sh | sh
 ```
 
 ## Supported Devices
