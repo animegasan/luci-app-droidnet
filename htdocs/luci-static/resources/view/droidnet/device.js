@@ -142,9 +142,7 @@ return view.extend({
 					var rootInfo = {};
 					var stdout = result.stdout ? result.stdout.trim() : '';
 					var stderr = result.stderr ? result.stderr.trim() : '';
-					if (stderr) {
-						rootInfo['device_root'] = false;
-					} else if (stdout === '/system/bin/sh: su: not found' || stdout === '/system/bin/sh: su: inaccessible or not found') {
+					if (stderr || stdout === '/system/bin/sh: su: not found' || stdout === '/system/bin/sh: su: inaccessible or not found') {
 						rootInfo['device_root'] = false;
 					} else {
 						var parts = stdout.split(':');
