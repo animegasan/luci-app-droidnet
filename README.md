@@ -19,16 +19,16 @@
 
 DroidNet is an application designed specifically for managing and optimizing network settings on Android modems. With advanced features, DroidNet allows users to have full control over their network connectivity and modem performance, ensuring a better user experience and more stable connections.
 
-## 📥 Install via Terminal
+## 📥 | Install via Terminal
 ```
 curl -s https://raw.githubusercontent.com/animegasan/luci-app-droidnet/master/install | sh
 ```
 
-## 📱 Supported Devices
+## 📱 | Supported Devices
 - Android version 10 or greater
 - Rooted Android for version 10 and lower
 
-## 🎯 Recommended Magisk Modules
+## 🎯 | Recommended Magisk Modules
 <table>
   <thead align="center">
     <tr border: none;>
@@ -39,23 +39,28 @@ curl -s https://raw.githubusercontent.com/animegasan/luci-app-droidnet/master/in
   </thead>
   <tbody>
     <tr>
-      <td><a href="https://github.com/anasfanani/Adb-Root-Enabler"><b>ADB Root Enabler</b></a></td>
+      <td><b>ADB Root Enabler</b></td>
       <td>Enable unauthenticated adb daemon, useful for devices with a broken screen!</td>
-      <td><img alt="Downloads" src="https://img.shields.io/github/downloads/anasfanani/Adb-Root-Enabler/total?style=flat-square&label=Downloads&labelColor=343b41"/></td>
+      <td><a target="_blank" href="https://github.com/anasfanani/Adb-Root-Enabler"><img alt="Downloads" src="https://img.shields.io/github/downloads/anasfanani/Adb-Root-Enabler/total?style=flat-square&label=Downloads&labelColor=343b41"/></a></td>
     </tr>
     <tr>
-      <td><a href="https://github.com/anasfanani/magisk-autoboot"><b>Magisk Autoboot</b></a></td>
+      <td><b>Magisk Autoboot</b></td>
       <td>Enable automatic booting of your Android device when it's connected to a charger or USB.</td>
-      <td><img alt="Downloads" src="https://img.shields.io/github/downloads/anasfanani/magisk-autoboot/total?style=flat-square&label=Downloads&labelColor=343b41"/></td>
+      <td><a target="_blank" href="https://github.com/anasfanani/magisk-autoboot"><img alt="Downloads" src="https://img.shields.io/github/downloads/anasfanani/magisk-autoboot/total?style=flat-square&label=Downloads&labelColor=343b41"/></a></td>
+    </tr>
+    <tr>
+      <td><b>Input Power Control</b></td>
+      <td>Automatically switches charging off when battery level reaches a certain disable threshold and back on as soon as it drowns to enable threshold.</td>
+      <td><a target="_blank" href="https://github.com/Magisk-Modules-Repo/IPControl"><img alt="Downloads" src="https://img.shields.io/github/downloads/Magisk-Modules-Repo/IPControl/latest/total?style=flat-square&label=Downloads&labelColor=343b41"/></a></td>
     </tr>
   </tbody>
 </table>
 
-## ✨ Features
-### 📊 Monitoring Service
+## ✨ | Features
+### 📊 | Monitoring Service
 Tracks network activity on Android modem, automatically restarts networks including tunnel services such as Neko, OpenClash, Passwall, and V2Ray based on predefined configurations. Supports ping via methods such as HTTP, HTTPS, TCP, and ICMP. Continuous monitoring can maintain optimal network connectivity, reducing risk of disruption and downtime.
 
-### ℹ️ Information Service
+### ℹ️ | Information Service
 Provides comprehensive information about various aspects of Android modem, ensuring access to important details about device performance and connectivity. This includes device details such as model, manufacturer, and operating system version, battery information such as current charge level and battery health, insights about wireless connectivity such as Wi-Fi networks, and information about cellular connectivity such as network provider.
 <details><summary>Screenshoot</summary>
  <p>
@@ -63,7 +68,7 @@ Provides comprehensive information about various aspects of Android modem, ensur
  </p>
 </details>
 
-### 📶 Mobile Network
+### 📶 | Mobile Network
 Displays IP address of Android modem, status of wireless connection, mobile data, and airplane mode. Ypu can manually enable or disable wireless connection, mobile data, and airplane mode as needed.
 <details><summary>Screenshoot</summary>
  <p>
@@ -71,7 +76,7 @@ Displays IP address of Android modem, status of wireless connection, mobile data
  </p>
 </details>
 
-### ⚡ Power Options and Application Manager
+### ⚡ | Power Options and Application Manager
 - Power Options<br>
 Gives full control over power operations of Android modem, allowing management of different power modes from one easily accessible place. You can shut down device, restart it, reboot device to enter fastboot mode, and reboot device to enter recovery mode.
 - Application Manager<br>
@@ -82,7 +87,7 @@ Manage applications installed on Android modem, adding necessary applications to
  </p>
 </details>
 
-### 📩 Inbox Messages
+### 📩 | Inbox Messages
 View all incoming messages received by Android modem, including sender information, message content, and reception date. Useful for monitoring important messages without need for a separate device. Using [ShellMS](https://github.com/try2codesecure/ShellMS) for efficient messaging, leveraging its capabilities to enhance communication directly from the development environment.
 
 <details><summary>Screenshoot</summary>
